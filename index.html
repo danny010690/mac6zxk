@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>华尔街资料供应链 V13.6全战绩累积版</title>
+<style>
+:root{
+    --bg:#0a0c10;
+    --surface:#12161f;
+    --surface-hover:#1a1f2b;
+    --line:rgba(255,255,255,.08);
+    --text:#e2e8f0;
+    --dim:#64748b;
+    --accent:#38bdf8;
+    --gold:#fbbf24;
+    --red:#f43f5e;
+    --green:#10b981;
+}
+*{box-sizing:border-box;}
+body{
+    margin:0; padding:16px; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    font-size:13px; line-height:1.5;
+    background-image: radial-gradient(circle at 50% 0%, rgba(56,189,248,0.05) 0%, transparent 50%);
+}
+h2{font-size:18px; margin:0 0 16px; color:var(--text); display:flex; justify-content:space-between; align-items:center; font-weight:800; letter-spacing:1px;}
+h2 span { font-size: 12px; color: var(--accent); font-weight: 600; background: rgba(56,189,248,0.1); padding: 4px 8px; border-radius: 4px;}
+
+.card{
+    background:var(--surface); border:1px solid var(--line); border-radius:12px;
+    padding:16px; margin-bottom:16px; box-shadow: 0 4px 20px rgba(0,0,0,.4);
+    transition: all 0.3s ease;
+}
+
+.section-title{font-size:13px; font-weight:800; color:var(--accent); margin:0 0 12px 0; display:flex; align-items:center; letter-spacing:1px;}
+.section-title::before { content: ""; display: inline-block; width: 4px; height: 14px; background: var(--accent); margin-right: 8px; border-radius: 2px;}
+
+.config-grid{display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:16px;}
+.cfg-item{background:rgba(255,255,255,.02); padding:10px; border-radius:8px; border:1px solid var(--line);}
+.cfg-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;}
+.cfg-label{font-size:11px; font-weight:600; color:var(--dim);}
+.cfg-input{
+    width:100%; background:rgba(0,0,0,.3); border:1px solid var(--line); color:var(--accent);
+    border-radius:6px; padding:8px; font-size:14px; font-weight:800; outline:none; text-align:center;
+    font-family: monospace;
+}
+.cfg-input:focus { border-color: var(--accent); }
+
+button.main-btn{
+    background:linear-gradient(135deg, var(--accent), #2563eb); color:#fff; border:none;
+    border-radius:8px; padding:14px; font-size:15px; font-weight:800; cursor:pointer;
+    width:100%; margin-top:10px; transition: opacity 0.2s, transform 0.1s;
+    box-shadow: 0 0 15px rgba(56,189,248,0.3);
+}
+button.main-btn:active { transform: scale(0.98); opacity: 0.9; }
+
+/* 最新预测面板 */
+.latest-predict {
+    background: linear-gradient(135deg, rgba(56,189,248,0.1), rgba(18,22,31,1));
+    border: 1px solid rgba(56,189,248,0.4); border-radius: 12px; padding: 16px;
+    margin-bottom: 24px; box-shadow: inset 0 0 20px rgba(56,189,248,0.05);
+    position: relative; 
+}
+.latest-title { font-size: 15px; font-weight: 800; color: var(--accent); margin-bottom: 12px; display:flex; justify-content:space-between; align-items:center;}
+.latest-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; transition: filter 0.3s; }
+.latest-box {
+    background: rgba(0,0,0,0.4); border-radius: 8px; padding: 12px;
+    border: 1px solid var(--line); border-top: 2px solid var(--accent);
+}
+.latest-box .t { font-size: 11px; color: var(--dim); margin-bottom: 8px; display:flex; justify-content:space-between; align-items:center;}
+.latest-box .t span { background: rgba(16,185,129,.15); color: var(--green); padding: 2px 6px; border-radius: 4px; font-weight:800; font-family: monospace;}
+.latest-box .v { font-size: 15px; font-weight: 900; color: #fff; word-break: break-all; line-height:1.4; font-family: monospace;}
+.latest-box .v.red { color: var(--red); text-shadow: 0 0 10px rgba(244,63,94,0.3);}
+
+/* VIP 打码与遮罩 */
+.vip-blur { filter: blur(8px); pointer-events: none; user-select: none; }
+.vip-overlay {
+    position: absolute; top:0; left:0; right:0; bottom:0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: rgba(10,12,16,0.7); backdrop-filter: blur(2px);
+    z-index: 10; border-radius: 12px; text-align: center; padding: 20px;
+    animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* 模块分组标题 */
+.group-title {
+    font-size: 15px; font-weight: 800; color: var(--text); margin: 28px 0 16px 0;
+    padding-bottom: 10px; border-bottom: 1px solid var(--line);
+    display: flex; justify-content:space-between; align-items: center;
+}
+.group-title span { font-size: 12px; color: var(--dim); font-weight: 400;}
+
+/* 算法流水账卡片 */
+.algo-card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; margin-bottom: 16px; overflow: hidden; transition: border-color 0.3s; }
+.algo-card:hover { border-color: rgba(56,189,248,0.3); }
+.algo-header { padding: 14px 16px; background: rgba(0,0,0,0.2); border-bottom: 1px solid var(--line); display: flex; justify-content:space-between; align-items: center; }
+.algo-name { font-size: 14px; font-weight: 800; color: var(--text); display: flex; align-items: center;}
+.algo-stat { font-size: 12px; color: var(--dim); font-family: monospace;}
+.algo-stat span { color: var(--green); font-weight: 900; font-size: 15px;}
+.algo-rank-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; color: #000; font-size: 11px; margin-right: 8px; font-weight: 900; letter-spacing: 0.5px; }
+.bg-gold { background: var(--gold); box-shadow: 0 0 10px rgba(251,191,36,0.4); }
+.bg-gray { background: #475569; color: #fff; }
+
+/* 连对连黑状态条 */
+.pacing-bar { display: flex; justify-content: space-between; padding: 8px 16px; background: rgba(0,0,0,0.15); border-bottom: 1px solid var(--line); font-size: 12px; font-family: monospace; color: var(--dim); }
+.pacing-bar span { font-weight: 800; }
+
+.flow-list { padding: 0 16px;}
+.flow-item { border-bottom: 1px solid rgba(255,255,255,0.03); padding: 12px 0; display:flex; flex-direction:column; gap:8px;}
+.flow-item:last-child { border-bottom: none; }
+.flow-head { display:flex; justify-content:space-between; align-items:center;}
+.flow-period { color: var(--dim); font-weight:700; font-size:12px; font-family: monospace;}
+.flow-result { font-weight:800; color: var(--gold); font-size:13px; font-family: monospace;}
+.flow-body { display:flex; gap:12px; align-items:flex-start; font-size:13px;}
+.flow-label { color:var(--dim); min-width:60px; font-size: 12px;}
+.flow-val { font-weight:800; line-height:1.5; word-wrap:break-word; flex:1; color:var(--text); font-family: monospace; font-size: 14px;}
+.flow-status { display:inline-block; padding:2px 6px; border-radius:4px; font-size:11px; margin-left:8px; font-weight:800; vertical-align: middle;}
+.status-hit { background:rgba(16,185,129,.15); color:var(--green); border: 1px solid rgba(16,185,129,.3);}
+.status-miss { background:rgba(244,63,94,.15); color:var(--red); border: 1px solid rgba(244,63,94,.3);}
+.hit-text { color:var(--green); }
+.miss-text { color:var(--red); }
+.hidden-flow { display: none; }
+
+.toggle-btn { text-align: center; padding: 12px; color: var(--accent); font-weight: 800; cursor: pointer; background: rgba(0,0,0,0.2); border-top: 1px solid var(--line); transition: background 0.2s; }
+.toggle-btn:hover { background: rgba(56,189,248,0.1); }
+
+/* 加载与弹窗 */
+#loading { position:fixed; inset:0; background:rgba(10,12,16,.9); z-index:9998; display:none; flex-direction:column; align-items:center; justify-content:center; backdrop-filter: blur(5px); }
+.spinner {width:40px; height:40px; border:3px solid rgba(56,189,248,.1); border-top-color:var(--accent); border-radius:50%; animation:spin 1s linear infinite; margin-bottom:15px;}
+@keyframes spin {to{transform:rotate(360deg)}}
+
+.vip-modal { position:fixed; inset:0; background:rgba(10,12,16,.95); z-index:99999; display:none; flex-direction:column; align-items:center; justify-content:center; backdrop-filter: blur(10px); }
+.vip-content { background:var(--surface); border:1px solid var(--red); border-radius:16px; padding:32px; width:90%; max-width:400px; text-align:center; box-shadow: 0 0 30px rgba(244,63,94,0.2); position: relative; }
+.vip-close { position:absolute; top:15px; right:15px; color:var(--dim); font-size:20px; cursor:pointer; }
+.vip-title { font-size:20px; font-weight:900; color:var(--red); margin-bottom:10px; }
+.vip-desc { font-size:13px; color:var(--dim); margin-bottom:20px; line-height:1.6;}
+.vip-input { width:100%; background:rgba(0,0,0,.5); border:1px solid var(--line); color:var(--gold); border-radius:8px; padding:12px; font-size:18px; font-weight:800; outline:none; text-align:center; margin-bottom:16px; letter-spacing:2px; }
+.vip-btn { width:100%; background:linear-gradient(135deg, var(--red), #be123c); color:#fff; border:none; border-radius:8px; padding:14px; font-size:15px; font-weight:800; cursor:pointer; }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+</style>
+</head>
+<body>
+
+<h2>量化AI分析终端 <span>V13.6 专业版</span></h2>
+<div id="loading"><div class="spinner"></div><div style="font-weight:800;color:var(--accent); font-family:monospace;">系统模型初始化中...</div></div>
+
+<div class="card">
+  <div class="section-title">模块选择</div>
+  <div class="config-grid">
+    <label class="cfg-item" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+      <span class="cfg-label" style="color:var(--text); font-size:12px;">推生肖</span>
+      <input type="checkbox" id="chkZ" checked style="width:16px; height:16px; accent-color:var(--accent);">
+    </label>
+    <label class="cfg-item" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+      <span class="cfg-label" style="color:var(--text); font-size:12px;">推尾数</span>
+      <input type="checkbox" id="chkT" checked style="width:16px; height:16px; accent-color:var(--accent);">
+    </label>
+    <label class="cfg-item" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+      <span class="cfg-label" style="color:var(--text); font-size:12px;">大底矩阵</span>
+      <input type="checkbox" id="chkN" checked style="width:16px; height:16px; accent-color:var(--accent);">
+    </label>
+    <label class="cfg-item" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+      <span class="cfg-label" style="color:var(--text); font-size:12px;">杀肖</span>
+      <input type="checkbox" id="chkKZ" checked style="width:16px; height:16px; accent-color:var(--accent);">
+    </label>
+    <label class="cfg-item" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+      <span class="cfg-label" style="color:var(--text); font-size:12px;">杀尾</span>
+      <input type="checkbox" id="chkKT" checked style="width:16px; height:16px; accent-color:var(--accent);">
+    </label>
+    <label class="cfg-item" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+      <span class="cfg-label" style="color:var(--text); font-size:12px;">杀一头</span>
+      <input type="checkbox" id="chkHead" checked style="width:16px; height:16px; accent-color:var(--accent);">
+    </label>
+    <label class="cfg-item" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+      <span class="cfg-label" style="color:var(--text); font-size:12px;">杀半波</span>
+      <input type="checkbox" id="chkKillHalf" checked style="width:16px; height:16px; accent-color:var(--accent);">
+    </label>
+    <label class="cfg-item" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;">
+      <span class="cfg-label" style="color:var(--text); font-size:12px;">杀码</span>
+      <input type="checkbox" id="chkKillN" checked style="width:16px; height:16px; accent-color:var(--accent);">
+    </label>
+  </div>
+
+  <div class="section-title" style="margin-top:20px;">参数设置</div>
+  <div class="config-grid">
+    <div class="cfg-item">
+      <div class="cfg-header"><span class="cfg-label">推肖数</span></div>
+      <select class="cfg-input" id="selZ">
+        <option value="5">5 肖</option><option value="6">6 肖</option><option value="7">7 肖</option>
+        <option value="8">8 肖</option><option value="9" selected>9 肖</option><option value="10">10 肖</option>
+      </select>
+    </div>
+    <div class="cfg-item">
+      <div class="cfg-header"><span class="cfg-label">推尾数</span></div>
+      <select class="cfg-input" id="selT">
+        <option value="3">3 尾</option><option value="4">4 尾</option><option value="5">5 尾</option>
+        <option value="6">6 尾</option><option value="7" selected>7 尾</option><option value="8">8 尾</option>
+      </select>
+    </div>
+    <div class="cfg-item">
+      <div class="cfg-header"><span class="cfg-label">大底码数</span></div>
+      <select class="cfg-input" id="selN">
+        <option value="16">16 码</option><option value="24">24 码</option><option value="30" selected>30 码</option>
+        <option value="36">36 码</option><option value="44">44 码</option>
+      </select>
+    </div>
+    <div class="cfg-item">
+      <div class="cfg-header"><span class="cfg-label">杀肖数</span></div>
+      <select class="cfg-input" id="selKZ">
+        <option value="1">1 肖</option><option value="2" selected>2 肖</option><option value="3">3 肖</option><option value="4">4 肖</option>
+      </select>
+    </div>
+    <div class="cfg-item">
+      <div class="cfg-header"><span class="cfg-label">杀尾数</span></div>
+      <select class="cfg-input" id="selKT">
+        <option value="1">1 尾</option><option value="2" selected>2 尾</option><option value="3">3 尾</option><option value="4">4 尾</option>
+      </select>
+    </div>
+    <div class="cfg-item">
+      <div class="cfg-header"><span class="cfg-label">杀半波数</span></div>
+      <select class="cfg-input" id="selKillHalf">
+        <option value="1" selected>1 个</option><option value="2">2 个</option>
+      </select>
+    </div>
+    <div class="cfg-item">
+      <div class="cfg-header"><span class="cfg-label">杀码数</span></div>
+      <select class="cfg-input" id="selKillN">
+        <option value="5">5 码</option><option value="10" selected>10 码</option>
+      </select>
+    </div>
+    <div class="cfg-item" style="grid-column: span 2;">
+      <div class="cfg-header"><span class="cfg-label">统计范围 / 模式</span></div>
+      <select class="cfg-input" id="selH">
+        <option value="30">近 30 期</option>
+        <option value="100" selected>近 100 期</option>
+        <option value="200">近 200 期</option>
+        <option value="300">近 300 期</option>
+        <option value="all">🏆 全程累积战绩</option>
+      </select>
+    </div>
+  </div>
+
+  <button class="main-btn" onclick="runSystem()">运行量化分析</button>
+</div>
+
+<!-- 最新一期预测结果 -->
+<div class="latest-predict" id="latestPanel" style="display:none;">
+  <div class="latest-title">
+    <span>🎯 目标预测</span>
+    <span id="nextIssueName" style="color:var(--gold); font-family:monospace;">--</span>
+  </div>
+  <div class="latest-grid" id="latestGrid"></div>
+</div>
+
+<!-- 历史流水渲染区 -->
+<div id="algoListContainer"></div>
+
+<!-- VIP 激活弹窗 -->
+<div class="vip-modal" id="vipModal">
+  <div class="vip-content">
+    <div class="vip-close" onclick="document.getElementById('vipModal').style.display='none'">×</div>
+    <div class="vip-title">🔒 核心数据锁定</div>
+    <div class="vip-desc">
+      系统检测到下期预测期号为 <strong style="color:var(--gold);" id="vipTargetPeriod">--</strong>（双数期）。<br>
+      根据规则，双数期需 VIP 权限才能解密数据。<br>请输入您的专属卡密进行网络验证：
+    </div>
+    <input type="text" class="vip-input" id="vipCard" placeholder="请输入授权卡密">
+    <button class="vip-btn" onclick="verifyCard()">网络验证</button>
+  </div>
+</div>
+
+<script>
+const REMOTE_DATA_URL='https://danny010690.github.io/mac6-pro/history.json';
+const zodiacToNumbers={"鼠":[7,19,31,43],"牛":[6,18,30,42],"虎":[5,17,29,41],"兔":[4,16,28,40],"龙":[3,15,27,39],"蛇":[2,14,26,38],"马":[1,13,25,37,49],"羊":[12,24,36,48],"猴":[11,23,35,47],"鸡":[10,22,34,46],"狗":[9,21,33,45],"猪":[8,20,32,44]};
+const zodiacKeys=["鼠","牛","虎","兔","龙","蛇","马","羊","猴","鸡","狗","猪"];
+const redWave=[1,2,7,8,12,13,18,19,23,24,29,30,34,35,40,45,46];
+const blueWave=[3,4,9,10,14,15,20,25,26,31,36,37,41,42,47,48];
+const greenWave=[5,6,11,16,17,21,22,27,28,32,33,38,39,43,44,49];
+
+let SEQ=[];
+let isVIP = localStorage.getItem('quantum_vip_auth') === 'true'; 
+const COOLDOWN = 5; 
+
+function getZodiac(n){for(const k in zodiacToNumbers){if(zodiacToNumbers[k].includes(n))return k}return""}
+function getWave(n){ if(redWave.includes(n)) return "红波"; if(blueWave.includes(n)) return "蓝波"; return "绿波"; }
+function getHalfWave(n){ let w=getWave(n); let isOdd=n%2!==0; return w[0]+(isOdd?"单":"双"); }
+function getHead(n){ return Math.floor(n/10)+"头"; }
+
+function calcRawScores(pastSeq) {
+    let miss = {}; for(let i=1; i<=49; i++) miss[i] = 100;
+    let freq = {}; for(let i=1; i<=49; i++) freq[i] = 0;
+    let recent5 = {}; for(let i=1; i<=49; i++) recent5[i] = 0;
+
+    for(let i=pastSeq.length-1; i>=0; i--) {
+        let num = pastSeq[i];
+        let diff = pastSeq.length - 1 - i;
+        if(miss[num] === 100) miss[num] = diff;
+        if(diff < 20) freq[num]++;
+        if(diff < 5) recent5[num]++;
+    }
+
+    let matrix = [];
+    for(let algoId=0; algoId<10; algoId++) {
+        let scores = {};
+        for(let i=1; i<=49; i++) {
+            let score = 0;
+            if (algoId === 0) score = (miss[i] > 30 ? miss[i]-5 : miss[i]) + freq[i]*2;
+            else if (algoId === 1) score = freq[i] * 10;
+            else if (algoId === 2) score = miss[i];
+            else if (algoId === 3) score = 100 - Math.abs(miss[i] - 15);
+            else if (algoId === 4) score = recent5[i] * 20 + freq[i] * 2;
+            else if (algoId === 5) score = 100 - freq[i] * 3 + (miss[i]>20?20:0);
+            else if (algoId === 6) { let last = pastSeq[pastSeq.length-1]; let dist = Math.abs(i - last); score = (dist === 1 || dist === 49) ? 50 : 0; score += freq[i]; }
+            else if (algoId === 7) score = (i < 10 || i > 39) ? freq[i]*2 + miss[i] : miss[i];
+            else if (algoId === 8) score = 50 - Math.abs(freq[i] - 5) + miss[i]*0.5;
+            else if (algoId === 9) score = Math.abs(49 - i) + freq[i]*3;
+            
+            scores[i] = score;
+        }
+        matrix.push(scores);
+    }
+    return matrix;
+}
+
+function getPools(scores) {
+    let zScores = {}; zodiacKeys.forEach(function(z){ zScores[z]=0; });
+    let tScores = {}; for(let t=0;t<10;t++) tScores[t]=0;
+    let headScores = {}; for(let h=0;h<5;h++) headScores[h]=0;
+    let halfScores = {"红单":0,"红双":0,"蓝单":0,"蓝双":0,"绿单":0,"绿双":0};
+
+    for(let n=1; n<=49; n++) {
+        let s = scores[n];
+        zScores[getZodiac(n)] += s;
+        tScores[n%10] += s;
+        headScores[Math.floor(n/10)] += s;
+        halfScores[getHalfWave(n)] += s;
+    }
+
+    let sortedZ = Object.keys(zScores).sort(function(x,y){ return zScores[y]-zScores[x] || x.localeCompare(y); });
+    let sortedT = Object.keys(tScores).map(Number).sort(function(x,y){ return tScores[y]-tScores[x] || x-y; });
+    let sortedHead = Object.keys(headScores).map(Number).sort(function(x,y){ return headScores[y]-headScores[x] || x-y; }).map(h => h + "头");
+    let sortedHalf = Object.keys(halfScores).sort(function(x,y){ return halfScores[y]-halfScores[x] || x.localeCompare(y); });
+    let sortedNums = Object.keys(scores).map(Number).sort(function(x,y){ return scores[y]-scores[x] || x-y; });
+
+    return { sortedZ, sortedT, sortedHead, sortedHalf, sortedNums };
+}
+
+async function fetchData(){
+  try {
+      const res = await fetch(REMOTE_DATA_URL + '?t=' + Date.now(), {cache:'no-store'});
+      const raw = await res.json();
+      SEQ = raw.map(function(x){ return { period: x.period || x.issue, num: parseInt(x.num || x.number) }; })
+               .filter(function(x){ return x.period && x.num > 0; });
+  } catch(e) { alert('数据连接失败.'); }
+}
+
+async function runSystem() {
+    if(!SEQ.length) {
+        document.getElementById('loading').style.display = 'flex';
+        await fetchData();
+        document.getElementById('loading').style.display = 'none';
+    }
+    if(SEQ.length < 30) return;
+    execute();
+}
+
+function verifyCard() {
+    const cardVal = document.getElementById('vipCard').value.trim();
+    const btn = document.querySelector('.vip-btn');
+    if (!cardVal) { alert('请输入卡密！'); return; }
+    
+    btn.textContent = '网络连接中...';
+    btn.disabled = true;
+    btn.style.opacity = '0.7';
+
+    setTimeout(() => {
+        if (cardVal.length >= 6) {
+            isVIP = true;
+            localStorage.setItem('quantum_vip_auth', 'true');
+            document.getElementById('vipModal').style.display = 'none';
+            btn.textContent = '网络验证';
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            execute(); 
+        } else {
+            alert('❌ 卡密无效！');
+            btn.textContent = '网络验证';
+            btn.disabled = false;
+            btn.style.opacity = '1';
+        }
+    }, 1200);
+}
+
+function pickWithCooldown(sortedPool, count, recentHistory) {
+    let selected = [];
+    
+    for (let i = 0; i < sortedPool.length; i++) {
+        if (selected.length >= count) break;
+        let item = sortedPool[i];
+        if (!recentHistory.includes(item)) {
+            selected.push(item);
+        }
+    }
+
+    if (selected.length < count) {
+        for (let i = 0; i < sortedPool.length; i++) {
+            if (selected.length >= count) break;
+            let item = sortedPool[i];
+            if (!selected.includes(item)) {
+                selected.push(item);
+            }
+        }
+    }
+    return selected;
+}
+
+function execute() {
+    const chkZ = document.getElementById('chkZ').checked;
+    const chkT = document.getElementById('chkT').checked;
+    const chkN = document.getElementById('chkN').checked;
+    const chkKZ = document.getElementById('chkKZ').checked;
+    const chkKT = document.getElementById('chkKT').checked;
+    const chkHead = document.getElementById('chkHead').checked;
+    const chkKillHalf = document.getElementById('chkKillHalf').checked;
+    const chkKillN = document.getElementById('chkKillN').checked;
+
+    const cntZ = parseInt(document.getElementById('selZ').value);
+    const cntT = parseInt(document.getElementById('selT').value);
+    const cntN = parseInt(document.getElementById('selN').value);
+    const cntKZ = parseInt(document.getElementById('selKZ').value);
+    const cntKT = parseInt(document.getElementById('selKT').value);
+    const cntKillHalf = parseInt(document.getElementById('selKillHalf').value);
+    const cntKillN = parseInt(document.getElementById('selKillN').value);
+    
+    // 【核心修改】判断是否为累积模式
+    const selHVal = document.getElementById('selH').value;
+    const isAccumulate = (selHVal === 'all');
+    const testLen = isAccumulate ? (SEQ.length - 10) : parseInt(selHVal);
+    const start = isAccumulate ? 10 : (SEQ.length - testLen);
+    
+    let algoNames = [
+        "Alpha-Go 趋势共振", "恒星脉冲追踪", "冰点潜伏探测", 
+        "引力回归矩阵", "短频高爆雷达", "暗网逆向收割", 
+        "隐式马尔可夫链", "镜像边界锚定", "稳态自适应滤波", "斐波那契极值螺旋"
+    ];
+    
+    let container = document.getElementById('algoListContainer');
+    container.innerHTML = '';
+
+    let historyZ = Array(10).fill([]).map(()=>[]);
+    let historyT = Array(10).fill([]).map(()=>[]);
+    let historyN = Array(10).fill([]).map(()=>[]);
+    let historyKZ = Array(10).fill([]).map(()=>[]);
+    let historyKT = Array(10).fill([]).map(()=>[]);
+    let historyKHead = Array(10).fill([]).map(()=>[]);
+    let historyKHalf = Array(10).fill([]).map(()=>[]);
+    let historyKN = Array(10).fill([]).map(()=>[]);
+    
+    let historyResults = [];
+
+    for (let i = 0; i < SEQ.length; i++) {
+        if(i < 10) { historyResults.push(null); continue; }
+        let past = SEQ.slice(0, i).map(function(x){return x.num;});
+        let matrix = calcRawScores(past);
+        let currentTurnResults = [];
+
+        for(let a=0; a<10; a++) {
+            let scores = matrix[a];
+            let { sortedZ, sortedT, sortedHead, sortedHalf, sortedNums } = getPools(scores);
+
+            let poolZ = pickWithCooldown(sortedZ, cntZ, historyZ[a]);
+            historyZ[a] = historyZ[a].concat(poolZ).slice(-COOLDOWN);
+
+            let poolT = pickWithCooldown(sortedT, cntT, historyT[a]);
+            historyT[a] = historyT[a].concat(poolT).slice(-COOLDOWN);
+
+            let poolN = pickWithCooldown(sortedNums, cntN, historyN[a]).sort((x,y)=>x-y);
+            historyN[a] = historyN[a].concat(poolN).slice(-COOLDOWN);
+
+            let revZ = sortedZ.slice().reverse();
+            let poolKZ = pickWithCooldown(revZ, cntKZ, historyKZ[a]);
+            historyKZ[a] = historyKZ[a].concat(poolKZ).slice(-COOLDOWN);
+
+            let revT = sortedT.slice().reverse();
+            let poolKT = pickWithCooldown(revT, cntKT, historyKT[a]);
+            historyKT[a] = historyKT[a].concat(poolKT).slice(-COOLDOWN);
+
+            let revHead = sortedHead.slice().reverse();
+            let poolKHead = pickWithCooldown(revHead, 1, historyKHead[a]); 
+            historyKHead[a] = historyKHead[a].concat(poolKHead).slice(-COOLDOWN);
+
+            let revHalf = sortedHalf.slice().reverse();
+            let poolKillHalf = pickWithCooldown(revHalf, cntKillHalf, historyKHalf[a]);
+            historyKHalf[a] = historyKHalf[a].concat(poolKillHalf).slice(-COOLDOWN);
+
+            let revNums = sortedNums.slice().reverse();
+            let poolKillN = pickWithCooldown(revNums, cntKillN, historyKN[a]).sort((x,y)=>x-y);
+            historyKN[a] = historyKN[a].concat(poolKillN).slice(-COOLDOWN);
+
+            currentTurnResults.push({ 
+                poolZ, poolT, poolN, poolKZ, poolKT, poolKHead, poolKillHalf, poolKillN 
+            });
+        }
+        historyResults.push(currentTurnResults);
+    }
+
+    let nextMatrix = calcRawScores(SEQ.map(x => x.num));
+    let nextTurnResults = [];
+    
+    for(let a=0; a<10; a++) {
+        let scores = nextMatrix[a];
+        let { sortedZ, sortedT, sortedHead, sortedHalf, sortedNums } = getPools(scores);
+
+        let poolZ = pickWithCooldown(sortedZ, cntZ, historyZ[a]);
+        let poolT = pickWithCooldown(sortedT, cntT, historyT[a]);
+        let poolN = pickWithCooldown(sortedNums, cntN, historyN[a]).sort((x,y)=>x-y);
+        
+        let revZ = sortedZ.slice().reverse();
+        let poolKZ = pickWithCooldown(revZ, cntKZ, historyKZ[a]);
+        
+        let revT = sortedT.slice().reverse();
+        let poolKT = pickWithCooldown(revT, cntKT, historyKT[a]);
+        
+        let revHead = sortedHead.slice().reverse();
+        let poolKHead = pickWithCooldown(revHead, 1, historyKHead[a]); 
+        
+        let revHalf = sortedHalf.slice().reverse();
+        let poolKillHalf = pickWithCooldown(revHalf, cntKillHalf, historyKHalf[a]);
+        
+        let revNums = sortedNums.slice().reverse();
+        let poolKillN = pickWithCooldown(revNums, cntKillN, historyKN[a]).sort((x,y)=>x-y);
+
+        nextTurnResults.push({ 
+            poolZ, poolT, poolN, poolKZ, poolKT, poolKHead, poolKillHalf, poolKillN 
+        });
+    }
+
+    let moduleTopStats = {};
+    function getModuleStats(type) {
+        let algos = [];
+        for(let i=0; i<10; i++) algos.push({ 
+            id: i, hits: 0, rate: 0,
+            curWin: 0, maxWin: 0, curLose: 0, maxLose: 0
+        });
+        
+        for (let i = start; i < SEQ.length; i++) {
+            const real = SEQ[i].num;
+            const realZ = getZodiac(real), realT = real%10;
+            const resArray = historyResults[i];
+            if(!resArray) continue;
+
+            for(let a=0; a<10; a++) {
+                let res = resArray[a];
+                let isHit = false;
+                if (type === 'z') isHit = res.poolZ.indexOf(realZ) !== -1;
+                else if (type === 't') isHit = res.poolT.indexOf(realT) !== -1;
+                else if (type === 'n') isHit = res.poolN.indexOf(real) !== -1;
+                else if (type === 'kz') isHit = res.poolKZ.indexOf(realZ) === -1;
+                else if (type === 'kt') isHit = res.poolKT.indexOf(realT) === -1;
+                else if (type === 'khead') isHit = res.poolKHead.indexOf(getHead(real)) === -1;
+                else if (type === 'killhalf') isHit = res.poolKillHalf.indexOf(getHalfWave(real)) === -1;
+                else if (type === 'kn') isHit = res.poolKillN.indexOf(real) === -1;
+                
+                if(isHit) {
+                    algos[a].hits++;
+                    algos[a].curWin++;
+                    algos[a].curLose = 0;
+                    if(algos[a].curWin > algos[a].maxWin) algos[a].maxWin = algos[a].curWin;
+                } else {
+                    algos[a].curLose++;
+                    algos[a].curWin = 0;
+                    if(algos[a].curLose > algos[a].maxLose) algos[a].maxLose = algos[a].curLose;
+                }
+            }
+        }
+        algos.forEach(function(m){ m.rate = parseFloat((m.hits / testLen * 100).toFixed(2)); });
+        let sortedAlgos = algos.slice().sort(function(a, b) { return b.rate - a.rate; });
+        return { sortedAlgos, best: sortedAlgos[0] };
+    }
+
+    if(chkZ) moduleTopStats['z'] = getModuleStats('z');
+    if(chkT) moduleTopStats['t'] = getModuleStats('t');
+    if(chkN) moduleTopStats['n'] = getModuleStats('n');
+    if(chkKZ) moduleTopStats['kz'] = getModuleStats('kz');
+    if(chkKT) moduleTopStats['kt'] = getModuleStats('kt');
+    if(chkHead) moduleTopStats['khead'] = getModuleStats('khead');
+    if(chkKillHalf) moduleTopStats['killhalf'] = getModuleStats('killhalf');
+    if(chkKillN) moduleTopStats['kn'] = getModuleStats('kn');
+
+    // ================= 渲染最新面板 =================
+    if(nextTurnResults) {
+        document.getElementById('latestPanel').style.display = 'block';
+        document.getElementById('nextIssueName').textContent = '预测期数: ' + (parseInt(SEQ[SEQ.length - 1].period.replace(/\D/g, '')) + 1) + ' 期';
+        
+        let latestHtml = '';
+        let statDesc = isAccumulate ? '累积命中' : `近${testLen}期胜率`;
+        
+        if(chkZ) {
+            let b = moduleTopStats['z'].best;
+            let p = nextTurnResults[b.id].poolZ;
+            latestHtml += `<div class="latest-box"><div class="t">推生肖(${cntZ}) <span>${statDesc}: ${b.rate}%</span></div><div class="v">${p.join(', ')}</div></div>`;
+        }
+        if(chkT) {
+            let b = moduleTopStats['t'].best;
+            let p = nextTurnResults[b.id].poolT;
+            latestHtml += `<div class="latest-box"><div class="t">推尾数(${cntT}) <span>${statDesc}: ${b.rate}%</span></div><div class="v red">${p.join(', ')}</div></div>`;
+        }
+        if(chkKZ) {
+            let b = moduleTopStats['kz'].best;
+            let p = nextTurnResults[b.id].poolKZ;
+            latestHtml += `<div class="latest-box"><div class="t">杀肖(${cntKZ}) <span>${statDesc}: ${b.rate}%</span></div><div class="v red">${p.join(', ')}</div></div>`;
+        }
+        if(chkKT) {
+            let b = moduleTopStats['kt'].best;
+            let p = nextTurnResults[b.id].poolKT;
+            latestHtml += `<div class="latest-box"><div class="t">杀尾(${cntKT}) <span>${statDesc}: ${b.rate}%</span></div><div class="v red">${p.join(', ')}</div></div>`;
+        }
+        if(chkN) {
+            let b = moduleTopStats['n'].best;
+            let p = nextTurnResults[b.id].poolN;
+            latestHtml += `<div class="latest-box" style="grid-column:span 2;"><div class="t">大底矩阵(${cntN}) <span>${statDesc}: ${b.rate}%</span></div><div class="v">${p.join(', ')}</div></div>`;
+        }
+        if(chkHead) {
+            let b = moduleTopStats['khead'].best;
+            let p = nextTurnResults[b.id].poolKHead;
+            latestHtml += `<div class="latest-box"><div class="t">杀一头 <span>${statDesc}: ${b.rate}%</span></div><div class="v red">${p.join('')}</div></div>`;
+        }
+        if(chkKillHalf) {
+            let b = moduleTopStats['killhalf'].best;
+            let p = nextTurnResults[b.id].poolKillHalf;
+            latestHtml += `<div class="latest-box"><div class="t">杀半波(${cntKillHalf}) <span>${statDesc}: ${b.rate}%</span></div><div class="v red">${p.join(', ')}</div></div>`;
+        }
+        if(chkKillN) {
+            let b = moduleTopStats['kn'].best;
+            let p = nextTurnResults[b.id].poolKillN;
+            latestHtml += `<div class="latest-box"><div class="t">杀${cntKillN}码 <span>${statDesc}: ${b.rate}%</span></div><div class="v red">${p.join(', ')}</div></div>`;
+        }
+        document.getElementById('latestGrid').innerHTML = latestHtml;
+
+        const nextPeriodNum = parseInt(SEQ[SEQ.length - 1].period.replace(/\D/g, '')) + 1;
+        const isOddPeriod = nextPeriodNum % 2 !== 0;
+        const latestGrid = document.getElementById('latestGrid');
+        const latestPanel = document.getElementById('latestPanel');
+
+        let oldOverlay = document.getElementById('vipLockOverlay');
+        if(oldOverlay) oldOverlay.remove();
+
+        if (!isOddPeriod && !isVIP) {
+            latestGrid.classList.add('vip-blur');
+            let overlay = document.createElement('div');
+            overlay.id = 'vipLockOverlay';
+            overlay.className = 'vip-overlay';
+            overlay.innerHTML = `
+                <div style="color:var(--red); font-size:20px; font-weight:900; margin-bottom:10px; text-shadow: 0 0 10px rgba(244,63,94,0.5);">🔒 双数期 VIP 专享数据</div>
+                <div style="color:var(--text); margin-bottom:20px; font-size:14px; line-height:1.6;">系统检测到本期为双数期，核心数据已加密。<br>请升级 VIP 获取精准预测结果。</div>
+                <button class="vip-btn" style="width:auto; padding:10px 30px; border-radius:20px; font-size:14px;" onclick="document.getElementById('vipTargetPeriod').textContent='${nextPeriodNum} 期'; document.getElementById('vipModal').style.display='flex'">立即解锁核心数据</button>
+            `;
+            latestPanel.appendChild(overlay);
+        } else {
+            latestGrid.classList.remove('vip-blur');
+        }
+    }
+
+    // ================= 渲染历史流水 =================
+    function renderModule(type, groupTitle, labelName) {
+        let algos = moduleTopStats[type].sortedAlgos;
+
+        let groupDiv = document.createElement('div');
+        groupDiv.className = 'group-title';
+        let titleRight = isAccumulate ? '全程累积记录' : `${testLen} 期记录`;
+        groupDiv.innerHTML = `<span>${groupTitle}</span><span>${titleRight}</span>`;
+        container.appendChild(groupDiv);
+
+        let html = '';
+        for (let k = 0; k < algos.length; k++) {
+            let m = algos[k];
+            let rankTag = k < 3 ? '<span class="algo-rank-tag bg-gold">TOP ' + (k+1) + '</span>' : '<span class="algo-rank-tag bg-gray">NO.' + (k+1) + '</span>';
+            
+            html += '<div class="card algo-card">';
+            html += '  <div class="algo-header">';
+            html += '    <div class="algo-name">' + rankTag + algoNames[m.id] + '</div>';
+            let statStr = isAccumulate ? `累积命中: <span>${m.hits}/${testLen}</span>` : `近${testLen}期命中: <span>${m.hits}次</span>`;
+            html += `    <div class="algo-stat">${statStr} (${m.rate}%)</div>`;
+            html += '  </div>';
+            
+            html += '  <div class="pacing-bar">';
+            html += '    <div>最多连对: <span style="color:var(--green);">' + m.maxWin + ' 期</span></div>';
+            html += '    <div>最多连黑: <span style="color:var(--red);">' + m.maxLose + ' 期</span></div>';
+            html += '    <div>当前连对: <span style="color:var(--gold);">' + m.curWin + ' 期</span></div>';
+            html += '  </div>';
+
+            html += '  <div class="flow-list" id="flow-'+type+'-'+m.id+'">';
+
+            for (let i = SEQ.length - 1; i >= start; i--) {
+                const real = SEQ[i].num;
+                const realZ = getZodiac(real), realT = real%10;
+                const realHalf = getHalfWave(real);
+                const resArray = historyResults[i];
+                if(!resArray) continue;
+                let res = resArray[m.id];
+                
+                let predStr = '', isHit = false;
+                let resultTags = '';
+
+                if (type === 'z') { 
+                    predStr = res.poolZ.join(', '); 
+                    isHit = res.poolZ.indexOf(realZ) !== -1; 
+                    resultTags = ` [${realZ}]`;
+                }
+                else if (type === 't') { 
+                    predStr = res.poolT.join(', '); 
+                    isHit = res.poolT.indexOf(realT) !== -1; 
+                    resultTags = ` [${realT}尾]`;
+                }
+                else if (type === 'n') { 
+                    predStr = res.poolN.join(', '); 
+                    isHit = res.poolN.indexOf(real) !== -1; 
+                    resultTags = ` [${realZ}]`; 
+                }
+                else if (type === 'kz') { 
+                    predStr = res.poolKZ.join(', '); 
+                    isHit = res.poolKZ.indexOf(realZ) === -1; 
+                    resultTags = ` [${realZ}]`;
+                }
+                else if (type === 'kt') { 
+                    predStr = res.poolKT.join(', '); 
+                    isHit = res.poolKT.indexOf(realT) === -1; 
+                    resultTags = ` [${realT}尾]`;
+                }
+                else if (type === 'khead') { 
+                    predStr = res.poolKHead.join(''); 
+                    isHit = res.poolKHead.indexOf(getHead(real)) === -1; 
+                    resultTags = ` [${getHead(real)}]`;
+                }
+                else if (type === 'killhalf') { 
+                    predStr = res.poolKillHalf.join(', '); 
+                    isHit = res.poolKillHalf.indexOf(realHalf) === -1; 
+                    resultTags = ` [${realHalf}]`; 
+                }
+                else if (type === 'kn') { 
+                    predStr = res.poolKillN.join(', '); 
+                    isHit = res.poolKillN.indexOf(real) === -1; 
+                    resultTags = ` [${realZ}]`; 
+                }
+
+                let valClass = isHit ? 'hit-text' : 'miss-text';
+                let statusTag = isHit ? '<span class="flow-status status-hit">命中</span>' : '<span class="flow-status status-miss">未中</span>';
+
+                let itemClass = (SEQ.length - 1 - i) >= 10 ? 'flow-item hidden-flow' : 'flow-item';
+                html += '    <div class="'+itemClass+'">';
+                html += '      <div class="flow-head">';
+                html += '        <span class="flow-period">期号: ' + SEQ[i].period + '</span>';
+                html += '        <span class="flow-result">开奖: ' + (real<10?'0'+real:real) + resultTags + '</span>';
+                html += '      </div>';
+                html += '      <div class="flow-body">';
+                html += '        <div class="flow-label">' + labelName + ':</div>';
+                html += '        <div class="flow-val ' + valClass + '">' + predStr + ' ' + statusTag + '</div>';
+                html += '      </div>';
+                html += '    </div>';
+            }
+            html += '  </div>';
+            if (testLen > 10) {
+                let btnText = isAccumulate ? '展开全部历史记录 ▼' : `展开全部 ${testLen} 期记录 ▼`;
+                html += `<div class="toggle-btn" onclick="toggleAll('flow-${type}-${m.id}', this)">${btnText}</div>`;
+            }
+            html += '</div>';
+        }
+
+        let div = document.createElement('div');
+        div.innerHTML = html;
+        container.appendChild(div);
+    }
+
+    if(chkZ) renderModule('z', '生肖算法 - 推荐', cntZ+'肖');
+    if(chkT) renderModule('t', '尾数算法 - 推荐', cntT+'尾');
+    if(chkN) renderModule('n', '矩阵算法 - 大底', cntN+'码');
+    if(chkKZ) renderModule('kz', '生肖算法 - 杀肖', cntKZ+'肖');
+    if(chkKT) renderModule('kt', '尾数算法 - 杀尾', cntKT+'尾');
+    if(chkHead) renderModule('khead', '头部算法 - 杀头', '杀1头');
+    if(chkKillHalf) renderModule('killhalf', '半波算法 - 杀波', '杀'+cntKillHalf+'半波');
+    if(chkKillN) renderModule('kn', '号码算法 - 杀码', '杀'+cntKillN+'码');
+}
+
+function toggleAll(id, btn) {
+    let items = document.getElementById(id).querySelectorAll('.flow-item');
+    let isHidden = items[10].classList.contains('hidden-flow');
+    for(let i=10; i<items.length; i++) {
+        if(isHidden) items[i].classList.remove('hidden-flow');
+        else items[i].classList.add('hidden-flow');
+    }
+    let selHVal = document.getElementById('selH').value;
+    let isAcc = (selHVal === 'all');
+    if(isHidden) {
+        btn.innerHTML = '收起记录 ▲';
+    } else {
+        btn.innerHTML = isAcc ? '展开全部历史记录 ▼' : `展开全部 ${selHVal} 期记录 ▼`;
+    }
+}
+
+window.onload = function() { runSystem(); };
+</script>
+</body>
+</html>
